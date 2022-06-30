@@ -8,7 +8,7 @@ function iconOnPointerDown(eventDown) {
         const iconMov = calcIconMov(thisIcon, pointerMov, 1.8);
         setIconTransform(thisIcon, iconMov[0], iconMov[1]);
     }
-    // 设置样式以营造出被拖动的效果
+    // 设置样式以营造出正在被拖动的效果
     this.style.fontSize = '44px';
     this.style.top = '2px';
     this.style.left = '2px';
@@ -29,6 +29,7 @@ function iconOnPointerUp(event) {
         if (judge([thisIcon, targetIcon])) { // 判断交换后是否可以连起来
             setIconTransform(thisIcon, dir[0] * 50, dir[1] * 50) // 用动画将thisIcon归新位
             setTimeout(exchangeLocations, 100, thisIcon, targetIcon); // 延时执行交换逻辑，为了动画能正常播放
+            setTimeout(fall, 500); // 下落
         } else { // 连不起来
             exchangeIds(thisIcon, targetIcon); // 交换回来
             this.style.transform = null;
@@ -38,31 +39,6 @@ function iconOnPointerUp(event) {
     } else { // 没有换过
         setIconTransform(thisIcon, 0, 0);
     }
-}
-
-function exchangeIds(icon1, icon2) { // 交换id
-    const icon1Id = icon1.getId();
-    icon1.setId(icon2.getId());
-    icon2.setId(icon1Id);
-}
-
-function exchangeLocations(thisIcon, targetIcon) {
-    // 记录原来的id
-    thisNumId = thisIcon.numId;
-    targetNumId = targetIcon.numId;
-
-    // 先从父元素移除
-    thisIcon.obj.remove();
-    targetIcon.obj.remove();
-
-    // 加入到新的对应父元素
-    document.getElementById('block' + thisNumId).append(targetIcon.obj);
-    document.getElementById('block' + targetNumId).append(thisIcon.obj);
-
-    // 恢复一些参数到默认
-    thisIcon.obj.style.transform = null;
-    targetIcon.obj.style.transform = null;
-    dir = [0, 0];
 }
 
 function calcIconMov(thisIcon, pointerMov, base) { // 根据指针移动量计算图标移动量，使用对数函数，默认基底为2
@@ -111,8 +87,4 @@ function isTargetIconValid(thisIcon) { // 检查待交换的icon是否合理
         valid = valid && !(thisIconPos[i] == 1 && dir[i] < 0 || thisIconPos[i] == (wh[i]) && dir[i] > 0);
     }
     return valid;
-}
-
-function setIconTransform(icon, tX, tY) { // 对给予的icon修改transform样式
-    icon.obj.style.transform = (tX == 0 && tY == 0) ? null : `translate(${tX}px, ${tY}px)`;
 }
