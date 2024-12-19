@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDI 消消乐</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="center-locator">
+        <div class="has-border">
+            <div>
+                <span>棋盘大小</span>
+                <input type="number" id="width" min="5" max="99" placeholder="水平" value="6" required>
+                x
+                <input type="number" id="height" min="5" max="99" placeholder="垂直" value="8" required>
+            </div>
+            <div>
+                <span>物件种类数量</span>
+                <input type="number" id="var_qty" min="3" max="99" value="3" disabled>
+            </div>
+            <div>
+                <button id="apply" onclick="apply()">应用</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="center-locator">
+        <main class="has-border" id="main">
+            <!---->
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
