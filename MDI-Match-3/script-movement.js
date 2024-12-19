@@ -1,41 +1,16 @@
 let dir = [0, 0]; // direction, 交换方向；0为横向方向，1为纵向方向
 
-function iconOnPointerDown(event) {
+function iconOnPointerDown(eventDown) {
     this.onpointermove = function (eventMove) {
-        const tms = 0.2; // times，
-        const minMov = 6; // 最小偏移量，阈值
-        const pointerMov = [eventMove.clientX - event.clientX, eventMove.clientY - event.clientY]; // 指针的相对移动量
-        const thisNumId = parseInt(this.id.substring(4)); // 本icon的数字id
+        const pointerMov = [eventMove.clientX - eventDown.clientX, eventMove.clientY - eventDown.clientY]; // 指针的相对移动量
         // 跟随鼠标，但又没有完全跟随；且能切换格子
-        const iconMov = calcIconMov(pointerMov, 1.6);
-        iconTransform(this, dir[0] * (50 - minMov) + iconMov[0], dir[1] * (50 - minMov) + iconMov[1]);
-        if (dir[0] || dir[1]) { // 已有待交换的icon
-            if (dir[0] && Math.abs(tms * pointerMov[0]) < minMov || dir[1] && Math.abs(tms * pointerMov[1]) < minMov) { // 锁死已偏移的方向，除非缩回限定的偏移量内
-                document.getElementById('icon' + calcTBEIconNumId(thisNumId)).style.transform = null;
-                dir = [0, 0];
-            }
-        } else { // 尚没有待交换的icon
-            for (let i = 0; i < 2; i++) { // 横向纵向都检查一遍
-                if (Math.abs(tms * pointerMov[i]) >= minMov) { // 当一个方向偏移量足够大时
-                    dir[i] = pointerMov[i] > 0 ? 1 : -1; // 确定方向
-                    if (isTBEIconValid(thisNumId)) { // 判断有无越界问题
-                        iconTransform(calcTBEIconNumId(thisNumId), -dir[0] * 50, -dir[1] * 50); // 移动待交换icon
-                        // 本icon的transform需再刷新一次，因为指针要是在这时不动，就没法移到新格子了
-                        iconTransform(this, dir[0] * (50 - minMov) + iconMov[0], dir[1] * (50 - minMov) + iconMov[1]);
-                        break;
-                    } else { // 有问题，这个dir不能要
-                        dir[i] = 0;
-                    }
-                }
-            }
-        }
+        const iconMov = calcIconMov(this, pointerMov, 1.8);
+        setIconTransform(this, iconMov[0], iconMov[1]);
     }
-    // 上面都是指针移动的监听器
-
     this.style.fontSize = '44px';
     this.style.top = '2px';
     this.style.left = '2px';
-    this.setPointerCapture(event.pointerId); // 开始捕捉指针
+    this.setPointerCapture(eventDown.pointerId); // 开始捕捉指针
 }
 
 function iconOnPointerUp(event) {
@@ -45,7 +20,7 @@ function iconOnPointerUp(event) {
     this.style.left = null;
     this.releasePointerCapture(event.pointerId);
     if (dir[0] || dir[1]) { // 需要交换
-        iconTransform(this, dir[0] * 50, dir[1] * 50) // 用动画将此icon归新位
+        setIconTransform(this, dir[0] * 50, dir[1] * 50) // 用动画将此icon归新位
         setTimeout(exchange, 100, this); // 延时执行交换逻辑，为了动画能正常播放
     } else { // 没有换过
         this.style.transform = null;
@@ -54,8 +29,8 @@ function iconOnPointerUp(event) {
 
 function exchange(thisIcon) {
     // 老id读取 & 新数字id记录
-    exchIconNewNumId = parseInt(thisIcon.id.substring(4)); // 代表this的老数字id
-    thisNewNumId = calcTBEIconNumId(exchIconNewNumId) // 代表exchIcon的老数字id
+    exchIconNewNumId = parseInt(thisIcon.id.substring(4)); // 代表this交换前的数字id
+    thisNewNumId = calcTBEIconNumId(exchIconNewNumId) // 代表exchIcon交换前的数字id
     exchIcon = document.getElementById('icon' + thisNewNumId);
 
     // 先从父元素移除
@@ -80,12 +55,37 @@ function exchange(thisIcon) {
 
 }
 
-function calcIconMov(pointerMov, base) { // 根据指针移动量计算图标移动量，使用对数函数，默认基底为2
+function calcIconMov(thisIcon, pointerMov, base) { // 根据指针移动量计算图标移动量，使用对数函数，默认基底为2
     base = base ? base : 2;
     let iconMov = [];
+    const thisNumId = parseInt(thisIcon.id.substring(4)); // 本icon的数字id
+    const minMov = 30; // 最小偏移量，阈值
+    // 先计算dir
+    if (dir[0] || dir[1]) { // 已有待交换的icon
+        for (let i = 0; i < 2; i++) { // 横向纵向都检查一遍
+            if (dir[i] && dir[i] * pointerMov[i] < minMov) { // 锁死已偏移的方向，除非缩回限定的偏移量内
+                setIconTransform(calcTBEIconNumId(thisNumId), 0, 0);
+                dir[i] = 0;
+                break;
+            }
+        }
+    } else { // 尚没有待交换的icon
+        for (let i = 0; i < 2; i++) { // 横向纵向都检查一遍
+            if (Math.abs(pointerMov[i]) >= minMov) { // 当一个方向偏移量足够大时
+                dir[i] = pointerMov[i] > 0 ? 1 : -1; // 确定方向
+                if (isTBEIconValid(thisNumId)) { // 判断有无越界问题
+                    setIconTransform(calcTBEIconNumId(thisNumId), -dir[0] * 50, -dir[1] * 50); // 移动待交换icon
+                    break;
+                } else { // 有问题，这个dir不能要
+                    dir[i] = 0;
+                }
+            }
+        }
+    }
+    // 再计算iconMov
     for (let i = 0; i < 2; i++) {
-        let offset = pointerMov[i] - 50 * dir[i]; // 
-        iconMov[i] = (offset >= 0 ? Math.log(offset + 1) : -Math.log(-offset + 1)) / Math.log(base);
+        const x = pointerMov[i] - dir[i] * 50; // 指针与方块中心的相对位置
+        iconMov[i] = (x > 0 ? Math.log(x + 1) : -Math.log(-x + 1)) / Math.log(base) + dir[i] * 50;
     }
     return iconMov;
 }
@@ -106,9 +106,9 @@ function isTBEIconValid(thisNumId) { // 检查待交换的icon是否合理
     return valid;
 }
 
-function iconTransform(icon, tX, tY) { // 对给予的icon修改transform样式
+function setIconTransform(icon, tX, tY) { // 对给予的icon修改transform样式
     if (!isNaN(icon)) { // 同时接受以'icon'开头的字符串或者纯数字
         icon = document.getElementById('icon' + icon); // 而纯数字需要先在开头加上'icon'
     }
-    icon.style.transform = `translate(${tX}px, ${tY}px)`;
+    icon.style.transform = (tX == 0 && tY == 0) ? null : `translate(${tX}px, ${tY}px)`;
 }
