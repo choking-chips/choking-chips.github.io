@@ -31,13 +31,14 @@
 }
 
 .center-locator {
-    max-width: 1000px;
-    margin: 4px auto;
+    max-width: 984px;
+    margin: 8px auto;
 }
 
 .has-border {
     border: 1px solid gray;
     border-radius: 4px;
+    margin: 0 8px;
     padding: 8px;
 }
 
